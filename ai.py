@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
-from prompt import SYSTEM_PROMPT
 
 load_dotenv()
 
@@ -12,17 +11,15 @@ if not api_key:
 client = OpenAI(api_key=api_key)
 
 def ask_ai(conversation):
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT}
-    ]
+    messages = []
     messages.extend(conversation)
 
     try:
         response = client.responses.create(
             model="gpt-4.1-mini",
             input=messages,
-            max_output_tokens=800,
-            temperature=0.85,
+            max_output_tokens=1200,   # longer replies
+            temperature=1.1,          # more natural / less robotic
             timeout=10
         )
 
