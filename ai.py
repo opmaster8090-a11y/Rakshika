@@ -27,19 +27,25 @@ def ask_ai(conversation):
     # user + assistant memory add
     messages.extend(conversation)
 
-    # ---------- OPENAI CALL ----------
-    response = client.responses.create(
-        model="gpt-4.1-mini",
-        input=messages,
-        max_output_tokens=1200,
-        temperature=1.05,
-        presence_penalty=0.6,
-        frequency_penalty=0.6
-    )
+    try:
+        # ---------- OPENAI CALL ----------
+        response = client.responses.create(
+            model="gpt-4.1-mini",
+            input=messages,
+            max_output_tokens=1200,
+            temperature=1.05,
+            presence_penalty=0.6,
+            frequency_penalty=0.6,
+            timeout=10  # 🔥 ADD THIS (prevents hanging)
+        )
 
-    # ---------- SAFE OUTPUT ----------
-    if not response.output_text:
+        # ---------- SAFE OUTPUT ----------
+        if not response or not response.output_text:
+            return None
+
+        return response.output_text.strip()
+
+    except Exception as e:
+        # 🔥 ADD THIS (debug only, no user spam)
+        print("OPENAI ERROR:", e)
         return None
-
-    return response.output_text.strip()
-
