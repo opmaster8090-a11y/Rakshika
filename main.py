@@ -56,8 +56,8 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    # ✅ AI sirf AI channel me
-    if message.channel.name != AI_CHANNEL_NAME:
+    # ✅ sirf AI channel me reply
+    if message.channel.name != "rakshika-ai":
         await bot.process_commands(message)
         return
 
@@ -66,6 +66,24 @@ async def on_message(message):
         return
 
     user_id = message.author.id
+
+    # user message memory
+    chat_memory[user_id].append({
+        "role": "user",
+        "content": content
+    })
+
+    async with message.channel.typing():
+        reply = ask_ai(chat_memory[user_id])
+
+    # bot reply memory
+    chat_memory[user_id].append({
+        "role": "assistant",
+        "content": reply
+    })
+
+    await message.reply(reply, mention_author=False)
+    await bot.process_commands(message)
 
     # ---------- MEMORY ADD ----------
     chat_memory[user_id].append({
@@ -99,3 +117,4 @@ async def on_message(message):
 
 # ---------- RUN ----------
 bot.run(os.getenv("DISCORD_TOKEN"))
+
