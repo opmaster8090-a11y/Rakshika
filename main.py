@@ -5,13 +5,16 @@ from dotenv import load_dotenv
 
 from ai import ask_ai
 from memory import chat_memory
+from prompt import SYSTEM_PROMPT
 
 load_dotenv()
 
+# ---------- INTENTS ----------
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
+# ---------- BOT ----------
 bot = commands.Bot(
     command_prefix="!",
     intents=intents,
@@ -20,10 +23,12 @@ bot = commands.Bot(
 
 AI_CHANNEL_NAME = "rakshika-ai"
 
+# ---------- READY ----------
 @bot.event
 async def on_ready():
     print(f"✅ RakshikaX online as {bot.user}")
 
+# ---------- ADMIN COMMAND ----------
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def create_ai_channel(ctx):
@@ -46,6 +51,7 @@ async def create_ai_channel(ctx):
 
     await ctx.send(f"✅ AI channel created: {channel.mention}")
 
+# ---------- MESSAGE HANDLER ----------
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -61,7 +67,14 @@ async def on_message(message):
 
     user_id = message.author.id
 
-    # ---- USER MEMORY ----
+    # ---- SYSTEM PROMPT ONCE PER USER ----
+    if len(chat_memory[user_id]) == 0:
+        chat_memory[user_id].append({
+            "role": "system",
+            "content": SYSTEM_PROMPT
+        })
+
+    # ---- USER MESSAGE ----
     chat_memory[user_id].append({
         "role": "user",
         "content": content
@@ -74,6 +87,11 @@ async def on_message(message):
         if not reply:
             return
 
+        # ---- AVOID TOO SHORT / DRY REPLIES ----
+        if len(reply.split()) < 6:
+            reply = reply + " 😌 bolo, thoda detail me."
+
+        # ---- ASSISTANT MEMORY ----
         chat_memory[user_id].append({
             "role": "assistant",
             "content": reply
@@ -86,4 +104,5 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
+# ---------- RUN ----------
 bot.run(os.getenv("DISCORD_TOKEN"))
