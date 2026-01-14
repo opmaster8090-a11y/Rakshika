@@ -8,12 +8,10 @@ from memory import chat_memory
 
 load_dotenv()
 
-# ---------- INTENTS ----------
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-# ---------- BOT ----------
 bot = commands.Bot(
     command_prefix="!",
     intents=intents,
@@ -22,12 +20,10 @@ bot = commands.Bot(
 
 AI_CHANNEL_NAME = "rakshika-ai"
 
-# ---------- READY ----------
 @bot.event
 async def on_ready():
     print(f"✅ RakshikaX online as {bot.user}")
 
-# ---------- ADMIN COMMAND ----------
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def create_ai_channel(ctx):
@@ -50,14 +46,12 @@ async def create_ai_channel(ctx):
 
     await ctx.send(f"✅ AI channel created: {channel.mention}")
 
-# ---------- MESSAGE HANDLER ----------
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return
 
-    # ✅ sirf AI channel me reply
-    if message.channel.name != "rakshika-ai":
+    if message.channel.name != AI_CHANNEL_NAME:
         await bot.process_commands(message)
         return
 
@@ -67,25 +61,7 @@ async def on_message(message):
 
     user_id = message.author.id
 
-    # user message memory
-    chat_memory[user_id].append({
-        "role": "user",
-        "content": content
-    })
-
-    async with message.channel.typing():
-        reply = ask_ai(chat_memory[user_id])
-
-    # bot reply memory
-    chat_memory[user_id].append({
-        "role": "assistant",
-        "content": reply
-    })
-
-    await message.reply(reply, mention_author=False)
-    await bot.process_commands(message)
-
-    # ---------- MEMORY ADD ----------
+    # ---- USER MEMORY ----
     chat_memory[user_id].append({
         "role": "user",
         "content": content
@@ -95,11 +71,8 @@ async def on_message(message):
         async with message.channel.typing():
             reply = ask_ai(chat_memory[user_id])
 
-        # ❌ NO fallback, NO feedback
         if not reply:
             return
-
-        reply = reply.strip()
 
         chat_memory[user_id].append({
             "role": "assistant",
@@ -109,12 +82,8 @@ async def on_message(message):
         await message.reply(reply, mention_author=False)
 
     except Exception as e:
-        # ❌ COMPLETELY SILENT ON ERROR
-        print("AI ERROR:", e)
-        return
+        print("BOT ERROR:", e)
 
     await bot.process_commands(message)
 
-# ---------- RUN ----------
 bot.run(os.getenv("DISCORD_TOKEN"))
-
