@@ -18,11 +18,12 @@ def ask_ai(conversation):
         model="gpt-4o-mini",
         messages=messages,
         max_tokens=1200,
-        temperature=1.05
-        presence_penalty=0.6
-        frequency_penalty=0.6
+        temperature=1.05,
+        presence_penalty=0.6,
+        frequency_penalty=0.6,
 
     )
 
     return response.choices[0].message.content.strip()
+
 
