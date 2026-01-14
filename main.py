@@ -46,6 +46,51 @@ async def create_ai_channel(ctx):
     await ctx.send(f"✅ AI channel created: {channel.mention}")
 
 # ---------- MESSAGE HANDLER ----------
+import discord
+from discord.ext import commands
+import os
+import random
+from dotenv import load_dotenv
+
+from ai import ask_ai
+from memory import chat_memory
+
+load_dotenv()
+
+# ---------- INTENTS ----------
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+
+# ---------- BOT ----------
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents,
+    help_command=None
+)
+
+# ---------- FALLBACK MESSAGES ----------
+FALLBACKS = [
+    "Hmm… lagta hai main thoda soch me atak gayi 😅 Ek baar phir bolna.",
+    "Oho, ye miss ho gaya 🙈 Dubara bolo na.",
+    "Wait… ye interesting lag raha tha 👀 Ek baar aur bolo.",
+    "Arre, brain thoda buffer ho gaya 😌 Phir se try karo.",
+    "Hehe, mujhe lagta hai signal weak tha 😅 Ek baar repeat?"
+]
+
+WEAK_REPLY_GUARD = [
+    "Hmm 😏 thoda detail me batao na.",
+    "Aise chhota hint mat do 😌 pura scene batao.",
+    "Interesting… par thoda aur bolo 👀",
+    "Ruko ruko 😄 ye incomplete lag raha hai."
+]
+
+# ---------- READY ----------
+@bot.event
+async def on_ready():
+    print(f"✅ RakshikaX online as {bot.user}")
+
+# ---------- MESSAGE HANDLER ----------
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -67,6 +112,10 @@ async def on_message(message):
         async with message.channel.typing():
             reply = ask_ai(chat_memory[user_id])
 
+        # empty / weak reply guard
+        if not reply or len(reply.strip()) < 6:
+            reply = random.choice(WEAK_REPLY_GUARD)
+
         # save bot reply
         chat_memory[user_id].append({
             "role": "assistant",
@@ -77,19 +126,24 @@ async def on_message(message):
 
     except Exception as e:
         print("AI ERROR:", e)
+
+        fallback = random.choice(FALLBACKS)
+
         await message.reply(
-            "Hmm… lagta hai main thoda soch me atak gayi 😅\n"
-            "Ek baar phir bolna, abhi dhyaan se sunungi 😉",
+            fallback,
             mention_author=False
         )
 
+    # allow commands to work
     await bot.process_commands(message)
 
-
+# ---------- RUN ----------
+bot.run(os.getenv("DISCORD_TOKEN"))
 
 
 # ---------- RUN ----------
 bot.run(os.getenv("DISCORD_TOKEN"))
+
 
 
 
