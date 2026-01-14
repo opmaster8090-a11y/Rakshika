@@ -51,7 +51,10 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    # ❌ sirf AI channel me reply kare
+    # ⭐ PEHLE commands process hone do
+    await bot.process_commands(message)
+
+    # sirf AI channel me AI reply kare
     if message.channel.name != AI_CHANNEL_NAME:
         return
 
@@ -61,7 +64,6 @@ async def on_message(message):
 
     user_id = message.author.id
 
-    # user msg save
     chat_memory[user_id].append({
         "role": "user",
         "content": content
@@ -70,7 +72,6 @@ async def on_message(message):
     async with message.channel.typing():
         reply = ask_ai(chat_memory[user_id])
 
-    # bot reply save
     chat_memory[user_id].append({
         "role": "assistant",
         "content": reply
@@ -78,7 +79,7 @@ async def on_message(message):
 
     await message.reply(reply, mention_author=False)
 
-    await bot.process_commands(message)
 
 # ---------- RUN ----------
 bot.run(os.getenv("DISCORD_TOKEN"))
+
