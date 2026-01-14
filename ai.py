@@ -3,49 +3,22 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from prompt import SYSTEM_PROMPT
 
-# ---------- LOAD ENV ----------
 load_dotenv()
-print("OPENAI_API_KEY =", os.getenv("OPENAI_API_KEY"))
 
-# ---------- API KEY GUARD ----------
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise RuntimeError("OPENAI_API_KEY missing")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# ---------- OPENAI CLIENT ----------
-client = OpenAI(api_key=api_key)
-
-# ---------- AI FUNCTION ----------
 def ask_ai(conversation):
     messages = [
-        {
-            "role": "system",
-            "content": SYSTEM_PROMPT
-        }
+        {"role": "system", "content": SYSTEM_PROMPT}
     ]
 
-    # user + assistant memory add
     messages.extend(conversation)
 
-    try:
-        # ---------- OPENAI CALL ----------
-        response = client.responses.create(
-            model="gpt-4.1-mini",
-            input=messages,
-            max_output_tokens=1200,
-            temperature=1.05,
-            presence_penalty=0.6,
-            frequency_penalty=0.6,
-            timeout=10  # 🔥 ADD THIS (prevents hanging)
-        )
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        max_tokens=1200,
+        temperature=0.85
+    )
 
-        # ---------- SAFE OUTPUT ----------
-        if not response or not response.output_text:
-            return None
-
-        return response.output_text.strip()
-
-    except Exception as e:
-        # 🔥 ADD THIS (debug only, no user spam)
-        print("OPENAI ERROR:", e)
-        return None
+    return response.choices[0].message.content.strip()
