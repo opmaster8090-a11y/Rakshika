@@ -3,6 +3,7 @@ from discord.ext import commands
 import os
 from ai import ask_ai
 from dotenv import load_dotenv
+from memory import chat_memory
 
 load_dotenv()
 
@@ -20,23 +21,24 @@ async def on_ready():
     print(f"RakshakX online as {bot.user}")
 
 # ---------- MESSAGE HANDLER ----------
-@bot.event
-async def on_message(message):
-    if message.author.bot:
-        return
+user_id = message.author.id
 
-    content = message.content.strip()
-    is_mentioned = bot.user in message.mentions
+# user ka message save
+chat_memory[user_id].append({
+    "role": "user",
+    "content": content
+})
 
-    if is_mentioned:
-        content = content.replace(f"<@{bot.user.id}>", "").strip()
+reply = ask_ai(chat_memory[user_id])
 
-    if content:
-        async with message.channel.typing():  # typing indicator
-            reply = ask_ai(content)
-            await message.reply(reply, mention_author=False)
+# bot ka reply bhi save
+chat_memory[user_id].append({
+    "role": "assistant",
+    "content": reply
+})
 
-    await bot.process_commands(message)
+await message.reply(reply, mention_author=False)
 
 # ---------- RUN ----------
 bot.run(os.getenv("DISCORD_TOKEN"))
+
