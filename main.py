@@ -65,6 +65,10 @@ async def on_message(message):
     if not content:
         return
 
+    # ---- IGNORE MESSAGE IF BACKSLASH FOUND ----
+    if "\\" in content:
+        return
+
     user_id = message.author.id
 
     # ---- SYSTEM PROMPT ONCE PER USER ----
