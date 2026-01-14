@@ -5,6 +5,7 @@ from prompt import SYSTEM_PROMPT
 
 # ---------- LOAD ENV ----------
 load_dotenv()
+print("OPENAI_API_KEY =", os.getenv("OPENAI_API_KEY"))
 
 # ---------- API KEY GUARD ----------
 api_key = os.getenv("OPENAI_API_KEY")
@@ -41,3 +42,4 @@ def ask_ai(conversation):
         return None
 
     return response.output_text.strip()
+
