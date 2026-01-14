@@ -1,54 +1,6 @@
 import discord
 from discord.ext import commands
 import os
-from dotenv import load_dotenv
-from ai import ask_ai
-from memory import chat_memory
-
-load_dotenv()
-
-# ---------- INTENTS ----------
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
-
-bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
-
-AI_CHANNEL_NAME = "rakshika-ai"
-
-# ---------- READY ----------
-@bot.event
-async def on_ready():
-    print(f"RakshikaX online as {bot.user}")
-
-# ---------- ADMIN COMMAND ----------
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def create_ai_channel(ctx):
-    guild = ctx.guild
-
-    # already exists?
-    for channel in guild.text_channels:
-        if channel.name == AI_CHANNEL_NAME:
-            await ctx.send("AI channel already exists 😌")
-            return
-
-    overwrites = {
-        guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-        guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
-    }
-
-    channel = await guild.create_text_channel(
-        AI_CHANNEL_NAME,
-        overwrites=overwrites
-    )
-
-    await ctx.send(f"✅ AI channel created: {channel.mention}")
-
-# ---------- MESSAGE HANDLER ----------
-import discord
-from discord.ext import commands
-import os
 import random
 from dotenv import load_dotenv
 
@@ -68,6 +20,8 @@ bot = commands.Bot(
     intents=intents,
     help_command=None
 )
+
+AI_CHANNEL_NAME = "rakshika-ai"
 
 # ---------- FALLBACK MESSAGES ----------
 FALLBACKS = [
@@ -90,6 +44,29 @@ WEAK_REPLY_GUARD = [
 async def on_ready():
     print(f"✅ RakshikaX online as {bot.user}")
 
+# ---------- ADMIN COMMAND ----------
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def create_ai_channel(ctx):
+    guild = ctx.guild
+
+    for channel in guild.text_channels:
+        if channel.name == AI_CHANNEL_NAME:
+            await ctx.send("AI channel already exists 😌")
+            return
+
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+        guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
+    }
+
+    channel = await guild.create_text_channel(
+        AI_CHANNEL_NAME,
+        overwrites=overwrites
+    )
+
+    await ctx.send(f"✅ AI channel created: {channel.mention}")
+
 # ---------- MESSAGE HANDLER ----------
 @bot.event
 async def on_message(message):
@@ -102,7 +79,6 @@ async def on_message(message):
 
     user_id = message.author.id
 
-    # save user message
     chat_memory[user_id].append({
         "role": "user",
         "content": content
@@ -112,11 +88,9 @@ async def on_message(message):
         async with message.channel.typing():
             reply = ask_ai(chat_memory[user_id])
 
-        # empty / weak reply guard
-        if not reply or len(reply.strip()) < 6:
-            reply = random.choice(WEAK_REPLY_GUARD)
+        if reply is None or reply.strip() == "":
+            raise ValueError("Empty AI response")
 
-        # save bot reply
         chat_memory[user_id].append({
             "role": "assistant",
             "content": reply
@@ -129,22 +103,14 @@ async def on_message(message):
 
         fallback = random.choice(FALLBACKS)
 
-        await message.reply(
-            fallback,
-            mention_author=False
-        )
+        chat_memory[user_id].append({
+            "role": "assistant",
+            "content": fallback
+        })
 
-    # allow commands to work
+        await message.reply(fallback, mention_author=False)
+
     await bot.process_commands(message)
 
 # ---------- RUN ----------
 bot.run(os.getenv("DISCORD_TOKEN"))
-
-
-# ---------- RUN ----------
-bot.run(os.getenv("DISCORD_TOKEN"))
-
-
-
-
-
