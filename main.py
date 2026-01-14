@@ -88,8 +88,19 @@ async def on_message(message):
         async with message.channel.typing():
             reply = ask_ai(chat_memory[user_id])
 
-        if reply is None or reply.strip() == "":
-            raise ValueError("Empty AI response")
+        # 🔥 CRITICAL FIX: NEVER REJECT AI RESPONSE
+        if reply is None:
+            reply = "Hmm… ek sec 🤔 phir se bolo na."
+
+        reply = str(reply).strip()
+
+        # agar reply bahut chhota ho
+        if len(reply) < 3:
+            reply = random.choice([
+                "Hmm 😌 thoda aur detail me batao.",
+                "Interesting… par thoda explain karo 👀",
+                "Ruko zara 😄 pura scene batao."
+            ])
 
         chat_memory[user_id].append({
             "role": "assistant",
@@ -101,16 +112,14 @@ async def on_message(message):
     except Exception as e:
         print("AI ERROR:", e)
 
-        fallback = random.choice(FALLBACKS)
-
-        chat_memory[user_id].append({
-            "role": "assistant",
-            "content": fallback
-        })
-
-        await message.reply(fallback, mention_author=False)
+        # ❌ fallback sirf REAL crash pe
+        await message.reply(
+            "Ek sec 😅 thoda glitch ho gaya. Ab bolo.",
+            mention_author=False
+        )
 
     await bot.process_commands(message)
 
 # ---------- RUN ----------
 bot.run(os.getenv("DISCORD_TOKEN"))
+
