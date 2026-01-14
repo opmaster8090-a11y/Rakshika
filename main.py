@@ -73,11 +73,26 @@ async def on_message(message):
     if message.author.bot:
         return
 
+    # ✅ FIX 1: AI sirf specific channel me bole
+    if message.channel.name != AI_CHANNEL_NAME:
+        await bot.process_commands(message)
+        return
+
     content = message.content.strip()
     if not content:
         return
 
     user_id = message.author.id
+
+    # ✅ FIX 2: SAME MESSAGE REPEAT DETECT
+    if len(chat_memory[user_id]) >= 1:
+        last_user_msg = chat_memory[user_id][-1]["content"]
+        if last_user_msg.lower() == content.lower():
+            await message.reply(
+                "Same cheez repeat kar rahe ho 😌 thoda alag tareeke se bolo.",
+                mention_author=False
+            )
+            return
 
     chat_memory[user_id].append({
         "role": "user",
@@ -88,19 +103,15 @@ async def on_message(message):
         async with message.channel.typing():
             reply = ask_ai(chat_memory[user_id])
 
-        # 🔥 CRITICAL FIX: NEVER REJECT AI RESPONSE
-        if reply is None:
-            reply = "Hmm… ek sec 🤔 phir se bolo na."
+        # ✅ FIX 3: AI reply NONE / EMPTY handle
+        if not reply or not isinstance(reply, str):
+            reply = random.choice(FALLBACKS)
 
-        reply = str(reply).strip()
+        reply = reply.strip()
 
-        # agar reply bahut chhota ho
-        if len(reply) < 3:
-            reply = random.choice([
-                "Hmm 😌 thoda aur detail me batao.",
-                "Interesting… par thoda explain karo 👀",
-                "Ruko zara 😄 pura scene batao."
-            ])
+        # ✅ FIX 4: WEAK REPLY MEANING CHECK (length pe nahi)
+        if reply.lower() in ["ok", "hmm", "idk", "yes", "no"]:
+            reply = random.choice(WEAK_REPLY_GUARD)
 
         chat_memory[user_id].append({
             "role": "assistant",
@@ -112,9 +123,9 @@ async def on_message(message):
     except Exception as e:
         print("AI ERROR:", e)
 
-        # ❌ fallback sirf REAL crash pe
+        # ❗ REAL crash pe hi glitch bole
         await message.reply(
-            "Ek sec 😅 thoda glitch ho gaya. Ab bolo.",
+            "Network thoda mood me nahi tha 😮‍💨 ab bolo.",
             mention_author=False
         )
 
@@ -122,4 +133,3 @@ async def on_message(message):
 
 # ---------- RUN ----------
 bot.run(os.getenv("DISCORD_TOKEN"))
-
