@@ -14,16 +14,13 @@ def ask_ai(conversation):
 
     messages.extend(conversation)
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=messages,
-        max_tokens=1200,
+    response = client.responses.create(
+        model="gpt-4.1-mini",
+        input=messages,
+        max_output_tokens=1200,
         temperature=1.05,
         presence_penalty=0.6,
         frequency_penalty=0.6,
-
     )
 
-    return response.choices[0].message.content.strip()
-
-
+    return response.output_text.strip()
