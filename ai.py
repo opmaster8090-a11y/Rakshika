@@ -7,14 +7,20 @@ load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def ask_ai(user_msg: str) -> str:
-    response = client.responses.create(
+def ask_ai(conversation):
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT}
+    ]
+
+    messages.extend(conversation)
+
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
-        input=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_msg}
-        ],
-        max_output_tokens=1000   # 🔥 BADHA DIYA (200 → 600)
+        messages=messages,
+        max_tokens=1000,
+        temperature=0.8
     )
 
-    return response.output_text
+    return response.choices[0].message.content.strip()
+
+
